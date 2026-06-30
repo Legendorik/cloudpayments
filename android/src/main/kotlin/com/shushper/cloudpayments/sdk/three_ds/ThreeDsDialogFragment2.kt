@@ -134,7 +134,6 @@ class ThreeDsDialogFragment2 : DialogFragment() {
             val element: Element? = doc.select("body").first()
             Log.d("URL", "BODY ${element.toString()}")
             val jsonObject = JsonParser().parse(element?.ownText()).asJsonObject
-            Log.d("URL", "JSON VALUE ${jsonObject.asString}")
             val paRes = jsonObject["PaRes"].asString
             Log.d("URL", "PARES VALUE $paRes")
             requireActivity().runOnUiThread {
