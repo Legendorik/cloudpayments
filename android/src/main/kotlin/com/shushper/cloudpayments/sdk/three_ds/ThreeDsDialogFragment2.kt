@@ -119,6 +119,7 @@ class ThreeDsDialogFragment2 : DialogFragment() {
         override fun onPageFinished(view: WebView, url: String) {
             Log.e("URL", "URL: $url")
             if (url.lowercase(Locale.getDefault()) == POST_BACK_URL.lowercase(Locale.getDefault())) {
+                Log.d("URL", "POST_BACK_URL FOUND")
                 view.isGone = true
                 view.loadUrl("javascript:window.JavaScriptThreeDs.processHTML(document.getElementsByTagName('html')[0].innerHTML);")
             }
@@ -128,14 +129,18 @@ class ThreeDsDialogFragment2 : DialogFragment() {
     internal inner class ThreeDsJavaScriptInterface {
         @JavascriptInterface
         fun processHTML(html: String) {
+            Log.d("URL", "START PROCESSING HTML RESPONSE")
             val doc: Document = Jsoup.parse(html)
             val element: Element? = doc.select("body").first()
             val jsonObject = JsonParser().parse(element?.ownText()).asJsonObject
             val paRes = jsonObject["PaRes"].asString
+            Log.d("URL", "PARES VALUE $paRes")
             requireActivity().runOnUiThread {
                 if (!paRes.isNullOrEmpty()) {
+                    Log.d("URL", "SUCCESS LISTENER TRIGGERED")
                     listener?.onAuthorizationCompleted(md, paRes)
                 } else {
+                    Log.d("URL", "FAILURE LISTENER TRIGGERED")
                     listener?.onAuthorizationFailed(html ?: "")
                 }
                 dismissAllowingStateLoss()
