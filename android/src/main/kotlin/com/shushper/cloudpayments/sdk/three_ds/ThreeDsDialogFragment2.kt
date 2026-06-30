@@ -137,7 +137,7 @@ class ThreeDsDialogFragment2 : DialogFragment() {
             Log.d("URL", "PARES VALUE $paRes")
             requireActivity().runOnUiThread {
                 if (!paRes.isNullOrEmpty()) {
-                    Log.d("URL", "SUCCESS LISTENER TRIGGERED")
+                    Log.d("URL", "SUCCESS LISTENER TRIGGERED, listener ${listener != null}")
                     listener?.onAuthorizationCompleted(md, paRes)
                 } else {
                     Log.d("URL", "FAILURE LISTENER TRIGGERED")
@@ -148,25 +148,26 @@ class ThreeDsDialogFragment2 : DialogFragment() {
         }
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-
-        listener = targetFragment as? ThreeDSDialogListener2
-        if (listener == null) {
-            listener = context as? ThreeDSDialogListener2
-        }
-    }
-
-    override fun onAttach(activity: Activity) {
-        super.onAttach(activity)
-
-        listener = targetFragment as? ThreeDSDialogListener2
-        if (listener == null) {
-            listener = activity as? ThreeDSDialogListener2
-        }
-    }
+//    override fun onAttach(context: Context) {
+//        super.onAttach(context)
+//
+//        listener = targetFragment as? ThreeDSDialogListener2
+//        if (listener == null) {
+//            listener = context as? ThreeDSDialogListener2
+//        }
+//    }
+//
+//    override fun onAttach(activity: Activity) {
+//        super.onAttach(activity)
+//
+//        listener = targetFragment as? ThreeDSDialogListener2
+//        if (listener == null) {
+//            listener = activity as? ThreeDSDialogListener2
+//        }
+//    }
 
     fun setListener(listener: ThreeDSDialogListener2) {
+        Log.e("URL", "Listener is set")
         this.listener = listener
     }
 }
