@@ -9,8 +9,9 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.wallet.*
 import com.shushper.cloudpayments.googlepay.GooglePayUtil
 import com.shushper.cloudpayments.sdk.cp_card.CPCard
-import com.shushper.cloudpayments.sdk.three_ds.ThreeDSDialogListener
-import com.shushper.cloudpayments.sdk.three_ds.ThreeDsDialogFragment
+//import com.shushper.cloudpayments.sdk.three_ds.ThreeDSDialogListener
+//import com.shushper.cloudpayments.sdk.three_ds.ThreeDsDialogFragment
+import com.shushper.cloudpayments.sdk.three_ds.ThreeDsDialogFragment2
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -168,24 +169,20 @@ class CloudpaymentsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Plu
         val paReq = params["paReq"] as String
 
         activity?.let {
-            val dialog = ThreeDsDialogFragment.newInstance(
+            val dialog = ThreeDsDialogFragment2.newInstance(
                     acsUrl,
                     transactionId,
                     paReq
             )
             dialog.show(it.supportFragmentManager, "3DS")
 
-            dialog.setListener(object : ThreeDSDialogListener {
+            dialog.setListener(object : ThreeDsDialogFragment2.ThreeDSDialogListener2 {
                 override fun onAuthorizationCompleted(md: String, paRes: String) {
                     result.success(mapOf("md" to md, "paRes" to paRes))
                 }
 
                 override fun onAuthorizationFailed(html: String?) {
                     result.error("AuthorizationFailed", "authorizationFailed", null)
-                }
-
-                override fun onCancel() {
-                    result.success(null)
                 }
             })
         }
