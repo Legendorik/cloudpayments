@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import WebKit
 
 public class SwiftCloudpaymentsPlugin: NSObject, FlutterPlugin {
     
@@ -7,6 +8,7 @@ public class SwiftCloudpaymentsPlugin: NSObject, FlutterPlugin {
     var applicationController: UIViewController!
     
     var d3ds: D3DS?
+    var threeDsProcessor: ThreeDsProcessor?
     var delegate: MyDelegate?
     
     var lastPaymentResult: FlutterResult?
@@ -79,28 +81,54 @@ public class SwiftCloudpaymentsPlugin: NSObject, FlutterPlugin {
     }
     
     private func show3ds(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        
-        let params = call.arguments as! [String: Any]
-        let acsUrl = params["acsUrl"] as? String
-        let transactionId = params["transactionId"] as? String
-        let paReq = params["paReq"] as? String
-        
-        d3ds = D3DS.init()
+        guard let params = call.arguments as? [String: Any] else {
+            result(FlutterError(code: "ARGS", message: nil, details: nil))
+            return
+        }
+
+        let acsUrl = params["acsUrl"] as! String
+        let transactionId = params["transactionId"] as! String
+        let paReq = params["paReq"] as! String
+
+        let data = ThreeDsData(
+            transactionId: transactionId,
+            paReq: paReq,
+            acsUrl: acsUrl
+        )
+
+        threeDsProcessor = ThreeDsProcessor()
         delegate = MyDelegate()
-        
+
+        delegate?.plugin = self
+
         delegate?.closureAuthCompleted = { md, paRes in
-            result(["md": md, "paRes": paRes])
+            result([
+                "md": md,
+                "paRes": paRes
+            ])
+
             self.delegate = nil
-            self.d3ds = nil
+            self.threeDsProcessor = nil
         }
-        
+
         delegate?.closureAuthFailed = { html in
-            result(FlutterError(code: "AuthorizationFailed", message: "authorizationFailed", details: nil))
+
+            result(
+                FlutterError(
+                    code: "AuthorizationFailed",
+                    message: html,
+                    details: nil
+                )
+            )
+
             self.delegate = nil
-            self.d3ds = nil
+            self.threeDsProcessor = nil
         }
-       
-        d3ds?.make3DSPayment(with: applicationController, andD3DSDelegate: delegate, andAcsURLString: acsUrl, andPaReqString: paReq, andTransactionIdString: transactionId)
+
+        threeDsProcessor?.make3DSPayment(
+            with: data,
+            delegate: delegate!
+        )
         
     }
     
@@ -164,17 +192,65 @@ extension SwiftCloudpaymentsPlugin: PKPaymentAuthorizationViewControllerDelegate
     }
 }
 
-class MyDelegate: D3DSDelegate {
-    
+
+
+//class MyDelegate: D3DSDelegate {
+//
+//    var closureAuthCompleted: ((_ md: String, _ paRes: String) -> Void)?
+//
+//    var closureAuthFailed: ((_ html: String) -> Void)?
+//
+//    func authorizationCompleted(withMD md: String!, andPares paRes: String!) {
+//        closureAuthCompleted?(md, paRes)
+//    }
+//
+//    func authorizationFailed(withHtml html: String!) {
+//        closureAuthFailed?(html)
+//    }
+//}
+class MyDelegate: NSObject, ThreeDsDelegate {
+
+    weak var plugin: SwiftCloudpaymentsPlugin?
+
     var closureAuthCompleted: ((_ md: String, _ paRes: String) -> Void)?
-    
     var closureAuthFailed: ((_ html: String) -> Void)?
-    
-    func authorizationCompleted(withMD md: String!, andPares paRes: String!) {
+
+    private var controller: UIViewController?
+
+    func willPresentWebView(_ webView: WKWebView) {
+
+        let vc = UIViewController()
+        //vc.view.backgroundColor = .systemBackground
+
+        webView.translatesAutoresizingMaskIntoConstraints = false
+        vc.view.addSubview(webView)
+
+        NSLayoutConstraint.activate([
+            webView.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            webView.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            webView.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor)
+        ])
+
+        controller = vc
+
+        plugin?.applicationController.present(
+            vc,
+            animated: true
+        )
+    }
+
+    func onAuthorizationCompleted(with md: String, paRes: String) {
+
+        controller?.dismiss(animated: true)
+
         closureAuthCompleted?(md, paRes)
     }
-    
-    func authorizationFailed(withHtml html: String!) {
+
+    func onAuthorizationFailed(with html: String) {
+
+        controller?.dismiss(animated: true)
+
         closureAuthFailed?(html)
     }
 }
